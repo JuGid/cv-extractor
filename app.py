@@ -40,7 +40,7 @@ def send_to_hubspot(email, firstname, lastname):
             "email": email,
             "firstname": firstname,
             "lastname": lastname,
-            "lifecyclestage": "lead"
+            "hs_lead_status": "0. Lead"
         }
     }
     response = requests.post(url, headers=headers, data=json.dumps(data))
