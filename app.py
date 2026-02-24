@@ -47,7 +47,7 @@ def send_to_hubspot(email, firstname, lastname):
     return response
 
 # Interface d'upload
-uploaded_files = st.file_uploader("Choisissez des CV (PDF) v0.0.3", type="pdf", accept_multiple_files=True)
+uploaded_files = st.file_uploader("Choisissez des CV (PDF) v0.0.5", type="pdf", accept_multiple_files=True)
 
 if uploaded_files:
     if not HUBSPOT_TOKEN:
