@@ -46,7 +46,8 @@ def send_to_hubspot(email, firstname, lastname):
         "properties": {
             "email": email,
             "firstname": firstname,
-            "lastname": lastname
+            "lastname": lastname,
+            "hs_lead_status": "0. Lead"
         }
     }
     response = requests.post(url, headers=headers, data=json.dumps(data))
