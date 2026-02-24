@@ -47,7 +47,8 @@ def send_to_hubspot(email, firstname, lastname):
             "email": email,
             "firstname": firstname,
             "lastname": lastname,
-            "hs_lead_status": "0. Lead"
+            "hs_lead_status": "0. Lead",
+            "evenement_declenche": "Candidature Indeed"
         }
     }
     response = requests.post(url, headers=headers, data=json.dumps(data))
