@@ -51,41 +51,54 @@ uploaded_files = st.file_uploader("Choisissez des CV (PDF) v0.0.3", type="pdf", 
 
 if uploaded_files:
     if not HUBSPOT_TOKEN:
-        st.warning("⚠️ Veuillez configurer votre token HubSpot.")
+        st.warning("⚠️ Token manquant dans les secrets.")
     else:
-        st.info(f"📂 {len(uploaded_files)} fichier(s) chargé(s). Vérifiez les informations ci-dessous :")
-        
+        # Liste pour stocker les infos extraites afin de les traiter globalement
+        extracted_data_list = []
+
         for i, uploaded_file in enumerate(uploaded_files):
-            # 1. Extraction du texte
+            # Extraction (Note: pour optimiser, on pourrait mettre ceci en cache)
             with fitz.open(stream=uploaded_file.read(), filetype="pdf") as doc:
                 text = "".join([page.get_text() for page in doc])
             
-            email_ext, fname_ext, lname_ext = extract_info(text)
+            email_ext, fn_ext, ln_ext = extract_info(text)
             
-            # 2. Création d'un formulaire d'édition pour chaque CV
-            with st.expander(f"📄 Modifier : {uploaded_file.name}", expanded=True):
+            with st.expander(f"📄 {uploaded_file.name}", expanded=True):
                 col1, col2 = st.columns(2)
-                
+                # On stocke les widgets dans extracted_data_list pour y accéder plus tard
                 with col1:
-                    new_fname = st.text_input("Prénom", value=fname_ext, key=f"fn_{i}")
-                    new_lname = st.text_input("Nom", value=lname_ext, key=f"ln_{i}")
-                
+                    fn = st.text_input("Prénom", value=fn_ext, key=f"fn_{i}")
+                    ln = st.text_input("Nom", value=ln_ext, key=f"ln_{i}")
                 with col2:
-                    new_email = st.text_input("Email", value=email_ext if email_ext else "", key=f"em_{i}")
-                    # On peut même ajouter un sélecteur pour le statut si besoin
-                    status = st.selectbox("Statut", ["0. Lead", "1. Contacté", "2. Entretien"], key=f"st_{i}")
+                    em = st.text_input("Email", value=email_ext, key=f"em_{i}")
+                
+                # On prépare les données pour l'envoi groupé
+                extracted_data_list.append({"email": em, "fname": fn, "lname": ln})
 
-                # 3. Bouton d'envoi avec les données MODIFIÉES
-                if st.button(f"Valider et envoyer sur HubSpot", key=f"btn_{i}"):
-                    if not new_email:
-                        st.error("L'email est obligatoire pour créer un contact.")
-                    else:
-                        with st.spinner("Envoi en cours..."):
-                            res = send_to_hubspot(new_email, new_fname, new_lname)
-                            
-                            if res.status_code in [201, 200]:
-                                st.success(f"✅ {new_fname} a été ajouté avec succès !")
-                            elif res.status_code == 409:
-                                st.warning("⚠️ Ce contact existe déjà dans HubSpot.")
-                            else:
-                                st.error(f"Erreur {res.status_code}: {res.json().get('message')}")
+        st.divider()
+
+        # --- BOUTON VALIDER TOUT ---
+        if st.button("🚀 Valider tout et envoyer dans HubSpot", use_container_width=True, type="primary"):
+            success_count = 0
+            error_count = 0
+            
+            progress_bar = st.progress(0)
+            
+            for index, data in enumerate(extracted_data_list):
+                if not data["email"]:
+                    st.error(f"❌ Email manquant pour {data['fname']}. Ignoré.")
+                    error_count += 1
+                    continue
+                
+                res = send_to_hubspot(data["email"], data["fname"], data["lname"])
+                
+                if res.status_code in [200, 201]:
+                    success_count += 1
+                else:
+                    st.error(f"Erreur pour {data['email']}: {res.json().get('message')}")
+                    error_count += 1
+                
+                # Mise à jour de la barre de progression
+                progress_bar.progress((index + 1) / len(extracted_data_list))
+
+            st.success(f"Terminé ! {success_count} contacts ajoutés, {error_count} erreurs.")
