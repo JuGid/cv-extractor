@@ -8,15 +8,7 @@ import json
 st.set_page_config(page_title="PDF to HubSpot", layout="centered")
 st.title("📄 Extracteur de CV vers HubSpot")
 
-# 1. Vérifier si le token est dans les Secrets Streamlit
-secret_token = st.secrets.get("HUBSPOT_TOKEN", None)
-
-# 2. Créer le champ dans la barre latérale avec le secret comme valeur par défaut
-HUBSPOT_TOKEN = st.sidebar.text_input(
-    "HubSpot Access Token", 
-    value=secret_token if secret_token else "", 
-    type="password",
-)
+HUBSPOT_TOKEN = st.secrets.get("HUBSPOT_TOKEN", None)
 
 def extract_info(text):
     """Extrait l'email et tente de trouver le nom/prénom"""
